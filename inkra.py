@@ -1,7 +1,7 @@
 from PIL import Image, ImageFont, ImageDraw
 from font_fredoka_one import FredokaOne
 import datetime
-import requests
+import PIL.ImageOps
 
 
 from inky.auto import auto
@@ -20,7 +20,7 @@ if inkyEnabled:
     RED = inky_display.RED
     BLACK = inky_display.BLACK
     WHITE = inky_display.WHITE
-    im = Image.new("P", (displayWidth, displayHeight))
+    im = Image.new("P", (displayWidth, displayHeight), WHITE)
     print(displayHeight)
 else:
     displayWidth=250
@@ -47,6 +47,7 @@ def battery_icon(im, charge: int, pos: int):
         im.paste(Image.open('assets/battery70.png'), (pos, 0))
     else:
         print("Batteries full")
+        
         im.paste(Image.open('assets/battery100.png'), (pos, 0))
 
 
