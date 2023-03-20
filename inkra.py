@@ -26,9 +26,9 @@ else:
     displayWidth=250
     displayHeight=122
     RED = (255,0,0)
-    BLACK = (255,255,255) # Black is white because PIL generates images with a black bg, sue me.
-    WHITE = (0,0,0)
-    im = Image.new("RGB", (displayWidth, displayHeight))
+    BLACK = (0,0,0)
+    WHITE = (255,255,255)
+    im = Image.new("RGB", (displayWidth, displayHeight), WHITE)
     print(displayHeight)
 
 draw = ImageDraw.Draw(im)
