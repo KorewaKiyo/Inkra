@@ -15,8 +15,9 @@ except RuntimeError as e:  # Linux
 
     inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
 except ImportError as e:  # Windows
-    print("Missing dependencies, if you're on windows you can ignore this, printing exception:")
-    print(e)
+    print("Missing dependencies,")
+    print("If you're on windows you can ignore this,")
+    print(f"printing exception:\n{e}\n")
     from inky.mock import InkyMockPHATSSD1608
 
     inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
