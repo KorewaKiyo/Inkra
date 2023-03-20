@@ -1,54 +1,52 @@
 from PIL import Image, ImageFont, ImageDraw
 from font_fredoka_one import FredokaOne
 import datetime
-import PIL.ImageOps
 
-
-from inky.auto import auto
-
+inkyReal = False
 try:
+    # noinspection PyUnresolvedReferences
+    from inky.auto import auto
     inky_display = auto(verbose=True)
-    inkyEnabled = True
-except RuntimeError:
-    print("Inky not found, assuming debug")
-    inkyEnabled = False
+    inkyReal = True
+except RuntimeError as e:  # Linux
+    print("Could not initialise display, if you're debugging you can ignore this, printing exception:")
+    print(e)
+    from inky.mock import InkyMockPHATSSD1608
 
-if inkyEnabled:
-    inky_display.set_border(inky_display.BLACK)
-    displayWidth = inky_display.width
-    displayHeight = inky_display.height
-    RED = inky_display.RED
-    BLACK = inky_display.BLACK
-    WHITE = inky_display.WHITE
-    im = Image.new("P", (displayWidth, displayHeight), WHITE)
-    print(displayHeight)
-else:
-    displayWidth=250
-    displayHeight=122
-    RED = (255,0,0)
-    BLACK = (0,0,0)
-    WHITE = (255,255,255)
-    im = Image.new("RGB", (displayWidth, displayHeight), WHITE)
-    print(displayHeight)
+    inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
+except ImportError as e:  # Windows
+    print("Missing dependencies, if you're on windows you can ignore this, printing exception:")
+    print(e)
+    from inky.mock import InkyMockPHATSSD1608
+
+    inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
+
+inky_display.set_border(inky_display.BLACK)
+displayWidth = inky_display.width
+displayHeight = inky_display.height
+RED = inky_display.RED
+BLACK = inky_display.BLACK
+WHITE = inky_display.WHITE
+im = Image.new("P", (displayWidth, displayHeight), WHITE)
+print(displayHeight)
 
 draw = ImageDraw.Draw(im)
 font = ImageFont.truetype(FredokaOne, 18)
 
 
-def battery_icon(im, charge: int, pos: int):
-    print(charge,pos)
+def battery_icon(img, charge: int, pos: int):
+    print(charge, pos)
     if charge <= 15:
-        im.paste(Image.open('assets/battery15.png'), (pos, 0))
+        img.paste(Image.open('assets/battery15.png'), (pos, 0))
     elif charge < 30:
-        im.paste(Image.open('assets/battery30.png'), (pos, 0))
+        img.paste(Image.open('assets/battery30.png'), (pos, 0))
     elif charge < 50:
-        im.paste(Image.open('assets/battery50.png'), (pos, 0))
+        img.paste(Image.open('assets/battery50.png'), (pos, 0))
     elif charge < 70:
-        im.paste(Image.open('assets/battery70.png'), (pos, 0))
+        img.paste(Image.open('assets/battery70.png'), (pos, 0))
     else:
         print("Batteries full")
-        
-        im.paste(Image.open('assets/battery100.png'), (pos, 0))
+        img.paste(Image.open('assets/battery100.png'), (pos, 0))
 
 
 battery = 85
@@ -67,13 +65,10 @@ print(f"right line is {displayWidth - timewidth}")
 print(f"left line is {timewidth}")
 
 batterypos = (displayWidth - timewidth) - timewidth - 48
-battery_icon(im,battery,batterypos)
+battery_icon(im, battery, batterypos)
 
-
-if inkyEnabled:
-    im = im.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM)
-    inky_display.set_image(im)
-    inky_display.show(busy_wait=True)
-    print(f"Finished displaying {newtime}")
-else:
-    im.show()
+im = im.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM)
+inky_display.set_image(im)
+while not inkyReal:
+    inky_display.show()
+print(f"Finished displaying {newtime}")
