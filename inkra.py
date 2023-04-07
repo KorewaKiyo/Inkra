@@ -5,7 +5,6 @@ import time
 import math
 
 
-
 class Inkra:
     def __init__(self):
         inky_real = True
@@ -14,7 +13,6 @@ class Inkra:
             from inky.auto import auto
 
             inky_display = auto(verbose=True)
-
 
         except RuntimeError as e:  # Linux
             print("Could not initialise display, if you're debugging you can ignore this, printing exception:")
@@ -53,20 +51,34 @@ class Inkra:
             icon = Image.open('assets/battery100.png')
         return icon
 
+    def generate_image(self, show_time=True, show_logo=True, show_bat_icon=True):
+        if show_time:
+            now = datetime.datetime.now().strftime('%H:%M')
+            self.draw.text((5, 0), now, self.display.RED, self.font)
+        if show_logo:
+            pass
+        if show_bat_icon:
+            battery = self.battery_icon()
+            battery.width
+        return self.image
+
 
 display = Inkra()
-display.font
 
 battery = 12
 message = f"battery is {battery}%"
-w, h = display.font.getsize(message)
-x = (display.width / 2) - (w / 2)
-y = (display.height / 2) - (h / 2)
-display.draw.text((x, y), message, display.display.RED, display.font)
-newtime = datetime.datetime.now().strftime('%H:%M')
-display.draw.text((5, 0), newtime, display.display.RED, display.font)
-timelength = display.font.getlength(newtime)
- 
+message_bbox = display.font.getbbox(message)
+message_width = message_bbox[2]
+message_height = message_bbox[3]
+
+message_coords = (
+    (display.width / 2) - (message_width / 2),
+    (display.height / 2) - (message_height / 2)
+)
+display.draw.text(message_coords, message, display.display.RED, display.font)
+display.generate_image(show_logo=False, show_bat_icon=False)
+timelength = display.font.getlength(datetime.datetime.now().strftime('%H:%M'))
+
 timewidth = math.ceil(timelength) + 10
 display.draw.line((timewidth, 0, timewidth, display.height), fill=display.display.BLACK, width=3)
 display.draw.line((display.width - timewidth, 0, display.width - timewidth, display.height), fill=display.display.BLACK,
@@ -76,9 +88,13 @@ print(f"left line is {timewidth}")
 # (display.width - timewidth) = 199
 # 199 - timewidth = 148
 # 148 - 48 = 100
-batterypos = ((display.width - timewidth) - timewidth - 48, 122 - 24)
-print(timewidth)
-display.image.paste(display.battery_icon(battery), batterypos)
+
+bat_icon = display.battery_icon(battery)
+bat_width = bat_icon.width
+bat_height = bat_icon.height
+print(bat_width,bat_height)
+batterypos = ((display.width - timewidth) - timewidth - bat_width, display.height - bat_height)
+display.image.paste(bat_icon, batterypos)
 display.image.paste(Image.open("assets/Cupra-Logo.png"), ((display.width - timewidth) - timewidth - 48, 0))
 im = display.image.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM)
 
@@ -86,7 +102,7 @@ while not display.display_simulated:
     display.display.set_image(im)
     display.display.show()
     time.sleep(1)
-display.display.set_image(im)
-display.display.show()
-time.sleep(1)
-print(f"Finished displaying {newtime}")
+# display.display.set_image(im)
+# display.display.show()
+# time.sleep(1)
+# print(f"Finished displaying {newtime}")
