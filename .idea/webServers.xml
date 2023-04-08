@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="6de7563e-c8df-4c51-beb5-8f1cad9b57ef" name="Pi (Mari WiFi)">
+        <fileTransfer rootFolder="/home/liam" accessType="SFTP" host="192.168.178.61" port="22" sshConfigId="54ed1fcd-5ffb-47d3-8a35-65b6315a2235" sshConfig="liam@192.168.178.61:22 agent" authAgent="true">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" isUseRsync="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

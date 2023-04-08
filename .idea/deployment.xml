@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" autoUpload="Always" serverName="liam@192.168.5.88:22 agent" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
+  <component name="PublishConfigData" autoUpload="Always" serverName="liam@192.168.178.61:22 agent" remoteFilesAllowedToDisappearOnAutoupload="false" confirmBeforeUploading="false">
     <option name="confirmBeforeUploading" value="false" />
     <serverData>
-      <paths name="liam@192.168.5.88:22 agent">
+      <paths name="Pi (Mari WiFi)">
         <serverdata>
           <mappings>
-            <mapping deploy="/home/liam/inkra" local="$PROJECT_DIR$" />
+            <mapping deploy="/Inkra" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="liam@192.168.178.61:22 agent">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/home/liam/Inkra" local="$PROJECT_DIR$" />
           </mappings>
         </serverdata>
       </paths>
