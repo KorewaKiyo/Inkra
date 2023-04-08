@@ -1,45 +1,51 @@
 from PIL import Image, ImageFont, ImageDraw
-from font_fredoka_one import FredokaOne
+
+import font_fredoka_one
 import datetime
 import time
 import math
 
 
 class Inkra:
-    def __init__(self, flip=True):
+    def __init__(self, flip: bool = True):
         inky_real = True
         try:
+            # noinspection PyUnresolvedReferences
             from inky.auto import auto
             inky_display = auto(verbose=True)
 
         except RuntimeError as e:  # Linux
-            print("Could not initialise display, if you're debugging you can ignore this, printing exception:")
-            print(e)
+            print(f"Could not initialise display, if you're debugging you can ignore this, printing exception:\n{e}")
             from inky.mock import InkyMockPHATSSD1608
             inky_real = False
             inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
 
         except ImportError as e:  # Windows
-            print("Missing dependencies,")
-            print("If you're on windows you can ignore this,")
-            print(f"printing exception:\n{e}\n")
+            print("Missing dependencies," \
+                  "If you're on windows you can ignore this," \
+                  f"printing exception:\n{e}\n")
             from inky.mock import InkyMockPHATSSD1608
             inky_real = False
             inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
-        except:
-            raise Exception("Unknown error!")
-        inky_display.set_border(inky_display.BLACK)
 
+        inky_display.set_border(inky_display.BLACK)
         self.width = inky_display.width
         self.height = inky_display.height
         self.display = inky_display
-        self.display_simulated = inky_real
+        self.display_real = inky_real
         self.image = Image.new("P", (self.width, self.height), self.display.WHITE)
         self.flip = flip
         self.draw = ImageDraw.Draw(self.image)
-        self.font = ImageFont.truetype(FredokaOne, 18)
+        self.font = ImageFont.truetype(font_fredoka_one.font, 18)
+        with open("assets/SourceCodePro-Bold.otf", "rb") as font:
+            self.font = ImageFont.truetype(font, 15)
+        with open("assets/banana.otf", "rb") as font:
+            self.font = ImageFont.truetype(font, 14)
 
-    def battery_icon(self, charge: int):
+        self.margin = 10
+        self.lineoffset = 53
+
+    def __battery_icon(self, charge: int):
 
         if charge < 0:
             raise AttributeError("Battery can not be less than 0%!")
@@ -80,19 +86,31 @@ class Inkra:
             timewidth = math.ceil(timelength) + 10
 
         if show_logo:
-            display.image.paste(Image.open("assets/Cupra-Logo.png"), ((display.width - timewidth) - timewidth - 48, 0))
+            logo = Image.open("assets/Cupra-Logo.png")
+            logo_pos = (
+                (self.width - (timelength + self.margin)) - (timelength + self.margin) - logo.width,
+                0
+            )
+            self.image.paste(logo, logo_pos)
         if show_bat_icon:
             print(charge)
-            self.battery_icon(charge)
+            self.__battery_icon(charge)
             bat_width = self.icon.width
             bat_height = self.icon.height
-            bat_pos = ((display.width - timewidth) - timewidth - bat_width, display.height - bat_height)
-            display.image.paste(self.icon, bat_pos)
+            bat_pos = ((self.width - (timelength + 10)) - (timelength + 10) - bat_width, self.height - bat_height)
+            bat_pos2 = (self.width - 2 * (timelength + self.margin) - bat_width, self.height - bat_height)
+            bat_pos = (
+                int((self.width / 2) - (bat_width / 2)),
+                self.height - bat_height
+            )
+
+            print(bat_pos, bat_pos2)
+            self.image.paste(self.icon, bat_pos2)
         if draw_lines:
-            display.draw.line((timewidth, 0, timewidth, display.height), fill=display.display.BLACK, width=3)
-            display.draw.line((display.width - timewidth, 0, display.width - timewidth, display.height),
-                              fill=display.display.BLACK,
-                              width=3)
+            self.draw.line((self.lineoffset, 0, self.lineoffset, self.height), fill=self.display.BLACK, width=3)
+            self.draw.line((self.width - self.lineoffset, 0, self.width - self.lineoffset, self.height),
+                           fill=display.display.BLACK,
+                           width=3)
             print(f"right line is {display.width - timewidth}")
             print(f"left line is {timewidth}")
             # (display.width - timewidth) = 199
@@ -107,16 +125,21 @@ class Inkra:
         self.display.show()
 
 
-display = Inkra()
+display = Inkra(flip=True)
 
-battery = 12
+battery = 45
 
-while not display.display_simulated:
-    battery -= 1
+while True:
+    # battery -= 1
+    if battery == -1:
+        time.sleep(30)
+        exit(0)
+
     display.generate_image(show_logo=True, show_bat_icon=True, show_time=True, charge=battery, draw_lines=True)
+
+    # display.image = display.image.transpose(Image.FLIP_LEFT_RIGHT)
     display.push_image()
-    time.sleep(1)
-# display.display.set_image(im)
-# display.display.show()
-# time.sleep(1)
-# print(f"Finished displaying {newtime}")
+    if display.display_real:
+        time.sleep(30)
+    else:
+        time.sleep(1)
