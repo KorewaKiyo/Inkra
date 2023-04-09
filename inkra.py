@@ -6,8 +6,28 @@ import time
 import math
 
 
+class Terminal:
+    header = '\033[95m'
+    okblue = '\033[94m'
+    okcyan = '\033[96m'
+    okgreen = '\033[92m'
+    warning = '\033[93m'
+    fail = '\033[91m'
+    end_colours = '\033[0m'
+    bold = '\033[1m'
+    underline = '\033[4m'
+
+    @classmethod
+    def warn(cls, message):
+        print(f"{cls.warning}{message}{cls.end_colours}")
+
+    @classmethod
+    def error(cls, message):
+        print(f"{cls.fail}{message}{cls.end_colours}")
+
+
 class Inkra:
-    def __init__(self, flip: bool = True):
+    def __init__(self, flip: bool = True, weather_enabled: bool = False, city: str = "Guildford", country: str = "GB"):
         inky_real = True
         try:
             # noinspection PyUnresolvedReferences
@@ -15,15 +35,16 @@ class Inkra:
             inky_display = auto(verbose=True)
 
         except RuntimeError as e:  # Linux
-            print(f"Could not initialise display, if you're debugging you can ignore this, printing exception:\n{e}")
+            Terminal.warn(
+                f"Could not initialise display, if you're debugging you can ignore this, \nPrinting exception:\n{e}\n")
             from inky.mock import InkyMockPHATSSD1608
             inky_real = False
             inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
 
         except ImportError as e:  # Windows
-            print("Missing dependencies," \
-                  "If you're on windows you can ignore this," \
-                  f"printing exception:\n{e}\n")
+            Terminal.warn("\nMissing dependencies,"
+                          "If you're on windows you can ignore this,"
+                          f"printing exception:\n{e}\n")
             from inky.mock import InkyMockPHATSSD1608
             inky_real = False
             inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
@@ -32,7 +53,7 @@ class Inkra:
         self.width = inky_display.width
         self.height = inky_display.height
         self.display = inky_display
-        self.display_real = inky_real
+
         self.image = Image.new("P", (self.width, self.height), self.display.WHITE)
         self.flip = flip
         self.draw = ImageDraw.Draw(self.image)
@@ -44,6 +65,21 @@ class Inkra:
 
         self.margin = 10
         self.lineoffset = 53
+
+        self.display_real = inky_real
+        self.enable_weather = weather_enabled
+
+        if self.enable_weather:
+            try:
+                from modules import weather
+                self.weather_city = city
+                self.weather_country = country
+                weather = weather.Weather(city, country)
+            except ModuleNotFoundError:
+                Terminal.error("\nOne or more modules required for the weather module missing. "
+                               "Disabling module")
+
+                self.enable_weather = False
 
     def __battery_icon(self, charge: int):
 
@@ -79,43 +115,41 @@ class Inkra:
             (display.height / 2) - (message_height / 2)
         )
         display.draw.text(message_coords, message, display.display.RED, display.font)
-        now = datetime.datetime.now().strftime('%H:%M')
-        timelength = display.font.getbbox(datetime.datetime.now().strftime('%H:%M'))[2]
+
         if show_time:
-            self.draw.text((5, 0), now, self.display.RED, self.font)
-            timewidth = math.ceil(timelength) + 10
+            time = datetime.datetime.now().strftime('%H:%M')
+            date = datetime.datetime.now().strftime('%d/%m')
+            datesize = display.font.getbbox(date)[2]
+            datepos = ((self.width - datesize - 5), 0)
+            print(datesize)
+            self.draw.text(
+                datepos,
+                date,
+                self.display.RED,
+                self.font
+            )
+
+            self.draw.text((5, 0), time, self.display.RED, self.font)
 
         if show_logo:
             logo = Image.open("assets/Cupra-Logo.png")
             logo_pos = (
-                (self.width - (timelength + self.margin)) - (timelength + self.margin) - logo.width,
+                math.ceil((self.width / 2) - (logo.width / 2)),
                 0
             )
             self.image.paste(logo, logo_pos)
         if show_bat_icon:
-            print(charge)
             self.__battery_icon(charge)
-            bat_width = self.icon.width
-            bat_height = self.icon.height
-            bat_pos = ((self.width - (timelength + 10)) - (timelength + 10) - bat_width, self.height - bat_height)
-            bat_pos2 = (self.width - 2 * (timelength + self.margin) - bat_width, self.height - bat_height)
             bat_pos = (
-                int((self.width / 2) - (bat_width / 2)),
-                self.height - bat_height
+                math.ceil((self.width / 2) - (self.icon.width / 2)),
+                (self.height - self.icon.height)
             )
-
-            print(bat_pos, bat_pos2)
-            self.image.paste(self.icon, bat_pos2)
+            self.image.paste(self.icon, bat_pos)
         if draw_lines:
             self.draw.line((self.lineoffset, 0, self.lineoffset, self.height), fill=self.display.BLACK, width=3)
             self.draw.line((self.width - self.lineoffset, 0, self.width - self.lineoffset, self.height),
                            fill=display.display.BLACK,
                            width=3)
-            print(f"right line is {display.width - timewidth}")
-            print(f"left line is {timewidth}")
-            # (display.width - timewidth) = 199
-            # 199 - timewidth = 148
-            # 148 - 48 = 100,
         return self.image
 
     def push_image(self):
@@ -125,19 +159,16 @@ class Inkra:
         self.display.show()
 
 
-display = Inkra(flip=True)
+display = Inkra(flip=True, weather_enabled=True)
 
 battery = 45
 
 while True:
-    # battery -= 1
     if battery == -1:
         time.sleep(30)
         exit(0)
 
     display.generate_image(show_logo=True, show_bat_icon=True, show_time=True, charge=battery, draw_lines=True)
-
-    # display.image = display.image.transpose(Image.FLIP_LEFT_RIGHT)
     display.push_image()
     if display.display_real:
         time.sleep(30)
