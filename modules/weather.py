@@ -8,5 +8,9 @@ class Weather:
         self.city = city
         self.country = country
 
-    def temperature(self):
-        pass
+    def get_coords(self, location):
+        latlng = geocoder.arcgis(address).latlng
+        return latlng
+
+    def get_weather(self, location):
+        latlng = self.get_coords(location)
