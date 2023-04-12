@@ -1,0 +1,2 @@
+class Cupra:
+    pass
