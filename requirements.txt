@@ -2,3 +2,5 @@ font_fredoka_one
 Pillow
 inky
 numpy
+geocoder
+requests

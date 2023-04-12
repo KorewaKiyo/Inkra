@@ -3,14 +3,13 @@ import geocoder
 
 
 class Weather:
-
-    def __init__(self, city, country):
-        self.city = city
-        self.country = country
-
     def get_coords(self, location):
-        latlng = geocoder.arcgis(address).latlng
+        latlng = geocoder.arcgis(location).latlng
         return latlng
 
-    def get_weather(self, location):
-        latlng = self.get_coords(location)
+    def __init__(self, city, country):
+        self.coordinates = self.get_coords(f"{city}{country}")
+        print(self.coordinates)
+
+    def get_weather(self):
+        pass
