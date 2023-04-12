@@ -69,14 +69,14 @@ class Inkra:
 
         self.display_real = inky_real
 
-        from modules import cupra
+        from interface import cupra
         cupra = cupra.Cupra()
         if self.enable_weather:
             try:
-                from modules import weather
+                from interface import weather
                 weather = weather.Weather(city, country)
             except ModuleNotFoundError:
-                Terminal.error("\nOne or more modules required for the weather module missing.\n"
+                Terminal.error("\nOne or more modules required for the weather interface missing.\n"
                                "Disabling module")
                 self.enable_weather = False
 
