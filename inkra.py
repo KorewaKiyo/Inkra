@@ -58,8 +58,6 @@ class Inkra:
         self.flip = flip
         self.draw = ImageDraw.Draw(self.image)
         self.font = ImageFont.truetype(font_fredoka_one.font, 18)
-        with open("assets/SourceCodePro-Bold.otf", "rb") as font:
-            self.font = ImageFont.truetype(font, 15)
         with open("assets/banana.otf", "rb") as font:
             self.font = ImageFont.truetype(font, 14)
 
