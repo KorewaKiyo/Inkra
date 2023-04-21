@@ -51,11 +51,11 @@ class Inkra:
         self.line_offset = 53
 
         from interface import cupra
-        cupra = cupra.Cupra()
+        self.cupra = cupra.Cupra()
         if self.enable_weather:
             try:
                 from interface import weather
-                weather = weather.Weather(city, country)
+                self.weather = weather.Weather(city, country)
             except ModuleNotFoundError:
                 Terminal.error("\nOne or more modules required for the weather interface missing.\n"
                                "Disabling module")
@@ -85,7 +85,7 @@ class Inkra:
         date = datetime.datetime.now().strftime('%d/%m')
 
         time_size = self.font.getbbox(time_now)
-        date_size = self.font.getbbox(date)
+        # date_size = self.font.getbbox(date)
         self.draw.text(
             (9, (time_size[3] + 5)),
             date,
@@ -93,7 +93,7 @@ class Inkra:
             self.font
         )
         # 9 is chosen as the x because
-        # lineoffset/2 = 26.5px
+        # line-offset/2 = 26.5px
         # length of date or time = 17.5px
         # 26.5 - 17.5 = 9px putting them in the centre
         self.draw.text((9, 0), time_now, self.display.RED, self.font)
@@ -139,6 +139,7 @@ class Inkra:
             self.draw.line((self.width - self.line_offset, 0, self.width - self.line_offset, self.height),
                            fill=self.display.BLACK,
                            width=3)
+        self.weather.get_weather()
         return self.image
 
     def push_image(self):
@@ -151,13 +152,12 @@ class Inkra:
 
 def main():
     display_options = {
+        "flip": True,
         "show_logo": True,
         "show_battery_icon": True,
         "show_time": True,
         "show_weather": True,
         "draw_lines": True,
-        "flip": True,
-
     }
     display = Inkra(options=display_options)
 
