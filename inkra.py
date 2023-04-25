@@ -139,7 +139,17 @@ class Inkra:
             self.draw.line((self.width - self.line_offset, 0, self.width - self.line_offset, self.height),
                            fill=self.display.BLACK,
                            width=3)
-        self.weather.get_weather()
+        if self.options["show_weather"]:
+            weather = self.weather.get_weather()
+            self.image.paste(weather["icon"], (self.display.width - weather["icon"].width, 0))
+            icon_box = (weather["icon"].width, weather["icon"].height)
+            temperature_pos = (
+                # math.floor(
+                (self.display.width - icon_box[0]),
+                5 + icon_box[1])
+            Terminal.debug(temperature_pos)
+            self.draw.text(temperature_pos, weather["temperature"], self.display.RED, self.font)
+
         return self.image
 
     def push_image(self):
@@ -161,7 +171,7 @@ def main():
     }
     display = Inkra(options=display_options)
 
-    battery = 45
+    battery = 10
 
     while True:
         if battery == -1:
