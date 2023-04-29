@@ -10,13 +10,6 @@
           </mappings>
         </serverdata>
       </paths>
-      <paths name="liam@192.168.178.61:22 agent">
-        <serverdata>
-          <mappings>
-            <mapping deploy="/home/liam/Inkra" local="$PROJECT_DIR$" />
-          </mappings>
-        </serverdata>
-      </paths>
     </serverData>
     <option name="myAutoUpload" value="ALWAYS" />
   </component>
