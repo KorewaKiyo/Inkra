@@ -4,13 +4,31 @@ import font_fredoka_one
 import datetime
 import time
 import math
+import yaml
+import os
+
+# Terminal interface
 from interface.terminal import Terminal
 
 
 class Inkra:
     def __init__(self, options: dict, city: str = "Guildford", country: str = "GB"):
         self.debug = False
+
+        # Load config and set display options
+        if os.path.exists("config.yml"):
+            with open("config.yml", "r") as config_file:
+                config = yaml.safe_load(config_file)
+        else:
+            Terminal.fatal("Missing config.yml, please create file.")
+        self.options = config["Options"]
+        self.flip = self.options["FlipScreen"]
+        self.enable_weather = self.options["ShowWeather"]
+
         try:
+            # Try to initialize our display,
+            # if it fails, we fall back to a mock display from the Inky library
+
             # noinspection PyUnresolvedReferences
             from inky.auto import auto
             inky_display = auto(verbose=True)
@@ -33,15 +51,11 @@ class Inkra:
             inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
 
         inky_display.set_border(inky_display.BLACK)
-        self.options = options
-        self.flip = options["flip"]
-        self.enable_weather = self.options["show_weather"]
 
-        self.width = inky_display.width
         self.height = inky_display.height
         self.display = inky_display
 
-        self.image = Image.new("P", (self.width, self.height), self.display.WHITE)
+        self.image = Image.new("P", (self.display.width, self.height), self.display.WHITE)
         self.draw = ImageDraw.Draw(self.image)
         self.font = ImageFont.truetype(font_fredoka_one.font, 18)
         with open("assets/banana.otf", "rb") as font:
@@ -67,8 +81,7 @@ class Inkra:
 
         if charge < 0:
             raise AttributeError("Battery can not be less than 0%!")
-
-        if charge <= 15:
+        elif charge <= 15:
             icon = Image.open('assets/battery15.png')
         elif charge < 30:
             icon = Image.open('assets/battery30.png')
@@ -102,7 +115,7 @@ class Inkra:
 
         # Reset canvas
         self.image = None
-        self.image = Image.new("P", (self.width, self.height), self.display.WHITE)
+        self.image = Image.new("P", (self.display.width, self.height), self.display.WHITE)
         self.draw = ImageDraw.Draw(self.image)
 
         message = f"battery is {charge}%"
@@ -111,35 +124,36 @@ class Inkra:
         message_height = message_bbox[3]
 
         message_coords = (
-            (self.width / 2) - (message_width / 2),
+            (self.display.width / 2) - (message_width / 2),
             (self.height / 2) - (message_height / 2)
         )
         self.draw.text(message_coords, message, self.display.RED, self.font)
 
-        if self.options["show_time"]:
+        if self.options["ShowTime"]:
             self.__draw_time()
 
-        if self.options["show_logo"]:
+        if self.options["ShowLogo"]:
             logo = Image.open("assets/Cupra-Logo.png")
             logo_pos = (
-                math.ceil((self.width / 2) - (logo.width / 2)),
+                math.ceil((self.display.width / 2) - (logo.width / 2)),
                 0
             )
             self.image.paste(logo, logo_pos)
 
-        if self.options["show_battery_icon"]:
+        if self.options["ShowBatteryIcon"]:
             self.__battery_icon(charge)
             bat_pos = (
-                math.ceil((self.width / 2) - (self.icon.width / 2)),
+                math.ceil((self.display.width / 2) - (self.icon.width / 2)),
                 (self.height - self.icon.height)
             )
             self.image.paste(self.icon, bat_pos)
-        if self.options["draw_lines"]:
+        if self.options["DrawLines"]:
             self.draw.line((self.line_offset, 0, self.line_offset, self.height), fill=self.display.BLACK, width=3)
-            self.draw.line((self.width - self.line_offset, 0, self.width - self.line_offset, self.height),
-                           fill=self.display.BLACK,
-                           width=3)
-        if self.options["show_weather"]:
+            self.draw.line(
+                (self.display.width - self.line_offset, 0, self.display.width - self.line_offset, self.height),
+                fill=self.display.BLACK,
+                width=3)
+        if self.options["ShowWeather"]:
             weather = self.weather.get_weather()
             self.image.paste(weather["icon"], (self.display.width - weather["icon"].width, 0))
             icon_box = (weather["icon"].width, weather["icon"].height)

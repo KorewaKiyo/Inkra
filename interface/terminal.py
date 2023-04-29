@@ -23,3 +23,8 @@ class Terminal:
     @classmethod
     def print(cls, message):
         print(f"{cls.end_colours}{message}")
+
+    @classmethod
+    def fatal(cls, message):
+        print(f"\n{cls.fail}Fatal error: {message}{cls.end_colours}")
+        exit(255)
