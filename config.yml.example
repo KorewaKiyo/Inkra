@@ -1,0 +1,14 @@
+Options:
+  FlipScreen: true
+  ShowLogo: true
+  ShowBatteryIcon: true
+  ShowWeather: true
+  ShowTime: true
+  DrawLines: true
+
+Cupra:
+  Username: cupra@example.org
+  Password: CupraBorn!
+  User_ID: ID HERE
+  VIN: VSSZZZK13XXXXXXXX
+  Token: "API TOKEN" 
