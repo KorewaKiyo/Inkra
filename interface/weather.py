@@ -6,20 +6,24 @@ from PIL import Image
 
 
 class Weather:
-
     @staticmethod
     def weather_code(code):
-        short_keywords = {0: "clear",
-                          3: "overcast",
-                          40: "fog",
-                          50: "drizzle",
-                          60: "rain",
-                          70: "snow",
-                          80: "showers",
-                          85: "snow",
-                          90: "thunder", }
-        long_keywords = {code: keyword for start_code, keyword in short_keywords.items() for code in
-                         range(start_code, start_code + 10)}
+        short_keywords = {
+            0: "clear",
+            3: "overcast",
+            40: "fog",
+            50: "drizzle",
+            60: "rain",
+            70: "snow",
+            80: "showers",
+            85: "snow",
+            90: "thunder",
+        }
+        long_keywords = {
+            code: keyword
+            for start_code, keyword in short_keywords.items()
+            for code in range(start_code, start_code + 10)
+        }
 
         if code in long_keywords:
             return long_keywords[code]
@@ -44,7 +48,7 @@ class Weather:
 
     def weather_icon(self, keyword):
         # if keyword == "overcast":
-        icon = Image.open('assets/overcast.png')
+        icon = Image.open("assets/overcast.png")
         return icon
 
     def get_weather(self):
@@ -54,7 +58,10 @@ class Weather:
             "current_weather": "True",
         }
 
-        if self.last_request is None or time.gmtime().tm_hour > self.last_request.tm_hour:
+        if (
+            self.last_request is None
+            or time.gmtime().tm_hour > self.last_request.tm_hour
+        ):
             response = requests.get(self.endpoint, params)
         else:
             response = self.cached_weather
