@@ -43,8 +43,7 @@ class Weather:
         self.coordinates = self.get_coords(f"{city}{country}")
         self.endpoint = "https://api.open-meteo.com/v1/forecast"
 
-        self.last_request = None
-        self.cached_weather = None
+        self.last_response = None
 
     def weather_icon(self, keyword):
         # if keyword == "overcast":
@@ -58,23 +57,18 @@ class Weather:
             "current_weather": "True",
         }
 
-        if (
-            self.last_request is None
-            or time.gmtime().tm_hour > self.last_request.tm_hour
-        ):
+        # Get response object from cache if exists and not more than 30 minutes old.
+        # Otherwise make another request and store.
+        if self.last_response is None or time.time() - 1800 > self.last_response[1]:
             response = requests.get(self.endpoint, params)
         else:
-            response = self.cached_weather
+            response = self.last_response[0]
 
         if response.status_code == 200:
-            self.last_request = time.gmtime()
-            self.cached_weather = response
-        else:
             Terminal.error(f"Error in response: {response.json()}")
             return None
-
-        # TODO: Implement caching.
-        # Terminal.debug(self.last_request)
+        else:
+            self.last_response = (response, time.time())
 
         keyword = self.weather_code(response.json()["current_weather"]["weathercode"])
         current = response.json()["current_weather"]
