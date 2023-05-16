@@ -23,8 +23,6 @@ class Inkra:
         else:
             Terminal.fatal("Missing config.yml, please create file.")
         self.options = config["Options"]
-        self.flip = self.options["FlipScreen"]
-        self.enable_weather = self.options["ShowWeather"]
 
         try:
             # Try to initialize our display,
@@ -77,7 +75,7 @@ class Inkra:
 
         self.cupra = cupra.Cupra()
 
-        if self.enable_weather:
+        if self.options["ShowWeather"]:
             try:
                 from interface import weather
 
@@ -85,9 +83,9 @@ class Inkra:
             except ModuleNotFoundError:
                 Terminal.error(
                     "\nOne or more modules required for the weather interface missing.\n"
-                    "Disabling module"
+                    "Disabling interface module"
                 )
-                self.enable_weather = False
+                self.options["ShowWeather"] = False
             except RuntimeError:
                 Terminal.error("Weather interface failed to init, disabling.")
 
@@ -120,16 +118,19 @@ class Inkra:
         self.draw.text((9, 0), time_now, self.display.RED, self.font)
 
     def generate_image(self, charge=0):
-        # Reset canvas
+        # Reset canvas otherwise we flip each time
         self.image = None
         self.image = Image.new(
             "P", (self.display.width, self.height), self.display.WHITE
         )
         self.draw = ImageDraw.Draw(self.image)
 
-        battery_status = self.cupra.get_vehicle_status()[0]
-        charge = int(battery_status.get("levelPct", None))
-        message = f"battery is {charge}%"
+        battery_status = self.cupra.get_vehicle_status()
+        if battery_status is not None:
+            charge = int(battery_status.get("levelPct", None))
+            message = f"Current charge is {charge}%"
+        else:
+            message = "Failed to get SoC"
         message_bbox = self.font.getbbox(message)
         message_width = message_bbox[2]
         message_height = message_bbox[3]
@@ -173,6 +174,11 @@ class Inkra:
             )
         if self.options["ShowWeather"]:
             weather = self.weather.get_weather()
+            if weather is None:
+                # It's easier to make this the return point if getting weather fails
+                # self.options["ShowWeather"] = False
+                return self.image
+
             self.image.paste(
                 weather["icon"], (self.display.width - weather["icon"].width, 0)
             )
@@ -190,7 +196,7 @@ class Inkra:
         return self.image
 
     def push_image(self):
-        if self.flip:
+        if self.options["FlipScreen"]:
             self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT).transpose(
                 Image.FLIP_TOP_BOTTOM
             )
@@ -216,6 +222,7 @@ def main():
             time.sleep(1)
 
 
+# noinspection PyUnusedLocal
 def interrupt(signum, frame):
     print(f"Exiting cleanly, signal given was {signum}")
     exit(0)
