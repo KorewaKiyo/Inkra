@@ -1,4 +1,6 @@
 class Terminal:
+    """Interface for pretty terminal colours"""
+
     header = "\033[95m"
     good = "\033[32m"
     warning = "\033[93m"
@@ -29,5 +31,6 @@ class Terminal:
 
     @classmethod
     def fatal(cls, message):
+        # It's easier on the eyes than an exception trace
         print(f"\n{cls.fail}Fatal error: {message}{cls.end_colours}")
         exit(255)

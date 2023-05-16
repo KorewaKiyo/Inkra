@@ -76,6 +76,7 @@ class Inkra:
         from interface import cupra
 
         self.cupra = cupra.Cupra()
+
         if self.enable_weather:
             try:
                 from interface import weather
@@ -126,6 +127,8 @@ class Inkra:
         )
         self.draw = ImageDraw.Draw(self.image)
 
+        battery_status = self.cupra.get_vehicle_status()[0]
+        charge = int(battery_status.get("levelPct", None))
         message = f"battery is {charge}%"
         message_bbox = self.font.getbbox(message)
         message_width = message_bbox[2]
@@ -179,7 +182,7 @@ class Inkra:
                 (self.display.width - icon_box[0]),
                 5 + icon_box[1],
             )
-            Terminal.debug(temperature_pos)
+            # Terminal.debug(temperature_pos)
             self.draw.text(
                 temperature_pos, weather["temperature"], self.display.RED, self.font
             )
@@ -199,14 +202,8 @@ class Inkra:
 def main():
     display = Inkra()
 
-    battery = 10
-
     while True:
-        if battery == -1:
-            time.sleep(30)
-            exit(0)
-
-        display.generate_image(charge=battery)
+        display.generate_image()
 
         try:
             display.push_image()
@@ -219,5 +216,11 @@ def main():
             time.sleep(1)
 
 
+def interrupt(signum, frame):
+    print(f"Exiting cleanly, signal given was {signum}")
+    exit(0)
+
+
 if __name__ == "__main__":
+    signal.signal(signal.SIGINT, interrupt)
     main()

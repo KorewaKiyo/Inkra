@@ -73,7 +73,8 @@ class Weather:
             Terminal.error(f"Error in response: {response.json()}")
             return None
 
-        Terminal.debug(self.last_request)
+        # TODO: Implement caching.
+        # Terminal.debug(self.last_request)
 
         keyword = self.weather_code(response.json()["current_weather"]["weathercode"])
         current = response.json()["current_weather"]
