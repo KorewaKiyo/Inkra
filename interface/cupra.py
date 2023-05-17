@@ -52,7 +52,7 @@ class Cupra:
             return None
 
         self.last_response = (response, time.time())
-        battery_status = status_response.json().get("engines").get("primary")
-        charge_status = status_response.json().get("services").get("charging")
-        climate_status = status_response.json().get("services").get("climatisation")
-        return (battery_status, charge_status, climate_status)
+        battery_status = response.json().get("engines").get("primary")
+        charge_status = response.json().get("services").get("charging")
+        climate_status = response.json().get("services").get("climatisation")
+        return battery_status, charge_status, climate_status
