@@ -1,6 +1,7 @@
 import requests
 import os
 import yaml
+import time
 
 # Terminal interface
 from interface.terminal import Terminal
@@ -32,16 +33,26 @@ class Cupra:
             "authorization": self.token,
         }
 
+        # Same as weather interface, we'll only cache the status request
+        # For SoC, Climate, etc. "
+        self.last_response = None
+
     def get_vehicle_status(self):
         url = f"{self.endpoint}v4/users/{self.user_id}/vehicles/{self.vin}/mycar"
 
-        status_response = requests.get(url, headers=self.header)
-        Terminal.debug(self.header)
-        if status_response.status_code != 200:
+        # Get response object from cache if exists and not more than 5 minutes old.
+        # Otherwise, make another request and store.
+        if self.last_response is None or time.time() - 300 > self.last_response[1]:
+            response = requests.get(url, headers=self.header)
+        else:
+            response = self.last_response[0]
+
+        if response.status_code != 200:
             Terminal.error(f"Request failed, reason was: {status_response.reason}")
             return None
+
+        self.last_response = (response, time.time())
         battery_status = status_response.json().get("engines").get("primary")
         charge_status = status_response.json().get("services").get("charging")
         climate_status = status_response.json().get("services").get("climatisation")
-        Terminal.debug(status_response.json())
         return (battery_status, charge_status, climate_status)

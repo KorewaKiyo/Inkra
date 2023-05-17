@@ -58,17 +58,17 @@ class Weather:
         }
 
         # Get response object from cache if exists and not more than 30 minutes old.
-        # Otherwise make another request and store.
+        # Otherwise, make another request and store.
         if self.last_response is None or time.time() - 1800 > self.last_response[1]:
             response = requests.get(self.endpoint, params)
         else:
             response = self.last_response[0]
 
-        if response.status_code == 200:
+        if response.status_code != 200:
             Terminal.error(f"Error in response: {response.json()}")
             return None
-        else:
-            self.last_response = (response, time.time())
+
+        self.last_response = (response, time.time())
 
         keyword = self.weather_code(response.json()["current_weather"]["weathercode"])
         current = response.json()["current_weather"]
