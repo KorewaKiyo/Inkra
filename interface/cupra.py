@@ -1,7 +1,6 @@
-import requests
-import os
-import yaml
 import time
+import requests
+import yaml
 
 # Terminal interface
 from interface.terminal import Terminal
@@ -26,7 +25,7 @@ class Cupra:
         self.token = self.config.get("Token")
 
         self.header = {
-            # I don't know the significance of this but it doesnt hurt
+            # I don't know the significance of this, but it doesn't hurt
             "x-csrf-token": "123456789123456789123456789123456789",
             "user-agent": "CUPRAApp%20-%20Store/20230404 CFNetwork/1390 Darwin/22.0.0",
             "user-id": self.user_id,
@@ -48,7 +47,7 @@ class Cupra:
             response = self.last_response[0]
 
         if response.status_code != 200:
-            Terminal.error(f"Request failed, reason was: {status_response.reason}")
+            Terminal.error(f"Request failed, reason was: {response.reason}")
             return None
 
         self.last_response = (response, time.time())
