@@ -1,15 +1,26 @@
-from PIL import Image, ImageFont, ImageDraw
-
-import font_fredoka_one
+import logging
 import datetime
 import time
 import math
 import yaml
 import os
 import signal
+import font_fredoka_one
+
+from PIL import Image, ImageFont, ImageDraw
 
 # Terminal interface
 from interface.terminal import Terminal
+
+# Setup logging and formatting
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(module)s - %(message)s")
+
+
+# Allows clean break without tkinter messages while debugging
+# noinspection PyUnusedLocal
+def interrupt(signum, frame):
+    print(f"Exiting cleanly, signal given was {signum}")
+    exit(0)
 
 
 class Inkra:
@@ -25,13 +36,12 @@ class Inkra:
         self.options = config["Options"]
 
         try:
-            # Try to initialize our display,
-            # if it fails, we fall back to a mock display from the Inky library
+            # Try to initialize Inky display,
+            # if it fails, fall back to a mock display from the Inky library
 
             # noinspection PyUnresolvedReferences
             from inky.auto import auto
-
-            inky_display = auto(verbose=True)
+            self.display = auto(verbose=True)
 
         except RuntimeError as e:  # Linux
             self.debug = True
@@ -42,7 +52,7 @@ class Inkra:
             )
             from inky.mock import InkyMockPHATSSD1608
 
-            inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
+            self.display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
 
         except ImportError as e:  # Windows
             self.debug = True
@@ -53,28 +63,40 @@ class Inkra:
             )
             from inky.mock import InkyMockPHATSSD1608
 
-            inky_display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
+            self.display = InkyMockPHATSSD1608("red", h_flip=True, v_flip=True)
 
-        inky_display.set_border(inky_display.BLACK)
+        # Setup
+        self.display.set_border(self.display.BLACK)
 
-        self.height = inky_display.height
-        self.display = inky_display
-
+        # Setup image and Drawing object
         self.image = Image.new(
-            "P", (self.display.width, self.height), self.display.WHITE
+            "P", (self.display.width, self.display.height), self.display.WHITE
         )
         self.draw = ImageDraw.Draw(self.image)
+
+        # Setup font, using banana but I'm leaving fredoka here for a bit.
+        # TODO: remove fredoka
         self.font = ImageFont.truetype(font_fredoka_one.font, 18)
         with open("assets/banana.otf", "rb") as font:
             self.font = ImageFont.truetype(font, 14)
 
+        # Consisent margins
         self.margin = 10
         self.line_offset = 53
+
+        # Create tokenfile temporarily from config.yml token
+        # if not os.path.exists("token.txt"):
+        #    with open("token.txt", "wb") as tokenfile:
+        #        tokenfile.write(config["Cupra"]["Token"])
 
         from interface import cupra
 
         self.cupra = cupra.Cupra()
 
+        # Delete tokenfile but persist token in config.yaml
+        pass
+
+        # Only import and setup weather interface if it's actually going to be used.
         if self.options["ShowWeather"]:
             try:
                 from interface import weather
@@ -90,6 +112,7 @@ class Inkra:
                 Terminal.error("Weather interface failed to init, disabling.")
 
     def __battery_icon(self, charge: int):
+        # TODO: I'm not sure I like this.
         if charge < 0:
             raise AttributeError("Battery can not be less than 0%!")
         elif charge <= 15:
@@ -105,6 +128,7 @@ class Inkra:
         self.icon = icon
 
     def __draw_time(self):
+        # TODO: Time function is a bit messy
         time_now = datetime.datetime.now().strftime("%H:%M")
         date = datetime.datetime.now().strftime("%d/%m")
 
@@ -118,26 +142,28 @@ class Inkra:
         self.draw.text((9, 0), time_now, self.display.RED, self.font)
 
     def generate_image(self, charge=0):
-        # Reset canvas otherwise we flip each time
+        # Reset canvas otherwise it flips each time
         self.image = None
         self.image = Image.new(
-            "P", (self.display.width, self.height), self.display.WHITE
+            "P", (self.display.width, self.display.height), self.display.WHITE
         )
         self.draw = ImageDraw.Draw(self.image)
 
-        battery_status = self.cupra.get_vehicle_status()
+        battery_status = self.cupra.get_battery_status()
         if battery_status is not None:
-            charge = int(battery_status.get("levelPct", None))
-            message = f"Current charge is {charge}%"
+            charge = battery_status.currentSOC_pct.value
+            charge_range = battery_status.cruisingRangeElectric_km.value
+            unit = "km"
+            message = f"SoC is {charge}%"
+            # f"Range is {charge_range}{unit}"
         else:
             message = "Failed to get SoC"
+
         message_bbox = self.font.getbbox(message)
-        message_width = message_bbox[2]
-        message_height = message_bbox[3]
 
         message_coords = (
-            (self.display.width / 2) - (message_width / 2),
-            (self.height / 2) - (message_height / 2),
+            (self.display.width / 2) - (message_bbox[2] / 2),
+            (self.display.height / 2) - (message_bbox[3] / 2),
         )
         self.draw.text(message_coords, message, self.display.RED, self.font)
 
@@ -153,12 +179,12 @@ class Inkra:
             self.__battery_icon(charge)
             bat_pos = (
                 math.ceil((self.display.width / 2) - (self.icon.width / 2)),
-                (self.height - self.icon.height),
+                (self.display.height - self.icon.height),
             )
             self.image.paste(self.icon, bat_pos)
         if self.options["DrawLines"]:
             self.draw.line(
-                (self.line_offset, 0, self.line_offset, self.height),
+                (self.line_offset, 0, self.line_offset, self.display.height),
                 fill=self.display.BLACK,
                 width=3,
             )
@@ -167,7 +193,7 @@ class Inkra:
                     self.display.width - self.line_offset,
                     0,
                     self.display.width - self.line_offset,
-                    self.height,
+                    self.display.height,
                 ),
                 fill=self.display.BLACK,
                 width=3,
@@ -196,12 +222,14 @@ class Inkra:
         return self.image
 
     def push_image(self):
+        # This allows to have the Pi in either orientation
         if self.options["FlipScreen"]:
-            self.image = self.image.transpose(Image.FLIP_LEFT_RIGHT).transpose(
-                Image.FLIP_TOP_BOTTOM
-            )
-        self.display.set_image(self.image)
+            self.image = self.image.transpose(
+                method=Image.Transpose.FLIP_LEFT_RIGHT
+            ).transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
 
+        # Push image to buffer and then trigger refresh
+        self.display.set_image(self.image)
         self.display.show()
 
 
@@ -210,24 +238,17 @@ def main():
 
     while True:
         display.generate_image()
+        display.push_image()
 
-        try:
-            display.push_image()
-        except RuntimeError:
-            break
-
+        # Updating the actual display is slow, but Tk will hang on windows if the thread is slept
+        # TODO: move actual display handling into a thread?
         if not display.debug:
             time.sleep(30)
         else:
             time.sleep(1)
 
 
-# noinspection PyUnusedLocal
-def interrupt(signum, frame):
-    print(f"Exiting cleanly, signal given was {signum}")
-    exit(0)
-
-
 if __name__ == "__main__":
+    # Register the clean exit handler and go to main
     signal.signal(signal.SIGINT, interrupt)
     main()
