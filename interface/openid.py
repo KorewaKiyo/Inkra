@@ -16,18 +16,19 @@ class OpenID:
             raise
 
         self.session = requests.session()
-        retries = Retry(total=5,
-                        backoff_factor=2,
-                        status_forcelist=[500],
-                        raise_on_status=False)
-        self.session.mount('https://', HTTPAdapter(max_retries=retries))
-        self.session.headers = CaseInsensitiveDict({
-            'content-type': 'application/json',
-            'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
-            'accept': '*/*',
-            'accept-language': 'de-de',
-            'accept-encoding': 'gzip, deflate, br'
-        })
+        retries = Retry(
+            total=5, backoff_factor=2, status_forcelist=[500], raise_on_status=False
+        )
+        self.session.mount("https://", HTTPAdapter(max_retries=retries))
+        self.session.headers = CaseInsensitiveDict(
+            {
+                "content-type": "application/json",
+                "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 15_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+                "accept": "*/*",
+                "accept-language": "de-de",
+                "accept-encoding": "gzip, deflate, br",
+            }
+        )
 
         self.client_id = "3c756d46-f1ba-4d78-9f9a-cff0d5292d51@apps_vw-dilab_com"
         self.redirect_uri = "cupra://oauth-callback"
@@ -52,14 +53,15 @@ class OpenID:
             "state": self.state,
             "ui_locales": "en",
             "code_challenge_method": "S256",
-
             # I really am not sure what this hash is expected to be.
-            "code_challenge": hashlib.sha256(self.state)
+            "code_challenge": hashlib.sha256(self.state),
         }
 
-        auth_response = self.session.get("https://identity.vwgroup.io/oidc/v1/authorize", allow_redirects=False)
+        auth_response = self.session.get(
+            "https://identity.vwgroup.io/oidc/v1/authorize", allow_redirects=False
+        )
         print(auth_response.status_code)
-        soup = BeautifulSoup(auth_response.text, 'html.parser')
+        soup = BeautifulSoup(auth_response.text, "html.parser")
 
         # These values associate the authorization requests together, I believe.
         self.csrf = soup.find(id="csrf").attrs.get("value")
@@ -74,18 +76,20 @@ class OpenID:
             "relayState": self.relay_state,
             "hmac": self.hmac,
             "email": self.username,
-
         }
         loginHeaders = self.session.headers.copy()
-        loginHeaders[
-            "referer"] = f"https://identity.vwgroup.io/signin-service/v1/signin/3c756d46-f1ba-4d78-9f9a-cff0d5292d51" \
-                         f"@apps_vw-dilab_com?relayState={self.relay_state}"
-        loginHeaders["Content-Type"] = 'application/x-www-form-urlencoded'
+        loginHeaders["referer"] = (
+            f"https://identity.vwgroup.io/signin-service/v1/signin/3c756d46-f1ba-4d78-9f9a-cff0d5292d51"
+            f"@apps_vw-dilab_com?relayState={self.relay_state}"
+        )
+        loginHeaders["Content-Type"] = "application/x-www-form-urlencoded"
 
         signin_response = self.session.post(
             f"https://identity.vwgroup.io/signin-service/v1/3c756d46-f1ba-4d78-9f9a-cff0d5292d51@apps_vw-dilab_com/login/identifier",
             data=body,
-            headers=loginHeaders, allow_redirects=True)
+            headers=loginHeaders,
+            allow_redirects=True,
+        )
         return signin_response
 
 
