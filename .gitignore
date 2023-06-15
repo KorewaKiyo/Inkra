@@ -228,9 +228,13 @@ fabric.properties
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
+
+# Can leak secrets
 config.yml
+token.json
+Netcap/
+
 
 MyCupra/
-Netcap/
-spec.yml
-token.txt
+
+
