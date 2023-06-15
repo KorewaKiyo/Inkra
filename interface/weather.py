@@ -45,8 +45,10 @@ class Weather:
 
         self.last_response = None
 
-    def weather_icon(self, keyword):
-        # if keyword == "overcast":
+    @staticmethod
+    def __weather_icon(keyword):
+        if keyword == "overcast":
+            pass
         icon = Image.open("assets/overcast.png")
         return icon
 
@@ -76,7 +78,7 @@ class Weather:
             "condition": keyword,
             "temperature": f"{current['temperature']}°C",
             "daytime": current["is_day"],
-            "icon": self.weather_icon(keyword),
+            "icon": self.__weather_icon(keyword),
         }
 
         return weather

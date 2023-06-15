@@ -2,6 +2,8 @@ import yaml
 from weconnect_cupra import weconnect_cupra
 from weconnect_cupra.service import Service
 
+from PIL import Image
+
 # Terminal interface
 from interface.terminal import Terminal
 
@@ -32,22 +34,40 @@ class Cupra:
             password=self.password,
             maxAge=300,
             tokenfile="token.json",
-            updateAfterLogin=True,
-            loginOnInit=True,
             service=Service("MyCupra"),
         )
-
-        self.cupra_api.persistTokens()
+        if self.cupra_api.session.token is None:
+            self.cupra_api.login()
+            self.cupra_api.persistTokens()
+        self.cupra_api.update()
 
         # If the VIN hasn't been defined, but login succeeded,
         # We can grab the first vehicle's VIN from the account and use that
         if self.vin is None:
+            self.cupra_api.update()
             self.vin = str(self.cupra_api.vehicles.children[0].vin)
             logger.info(f"Your VIN is {self.vin}, you should add this to the Cupra section of config.yml")
 
         # Same as weather interface, we'll only cache the status request
         # For SoC, Climate, etc. "
         self.last_response = None
+
+    @staticmethod
+    def __battery_icon(charge: int):
+        # TODO: I'm not sure I like this.
+        if charge < 0:
+            raise AttributeError("Battery can not be less than 0%!")
+        elif charge <= 15:
+            icon = Image.open("assets/battery15.png")
+        elif charge < 30:
+            icon = Image.open("assets/battery30.png")
+        elif charge < 50:
+            icon = Image.open("assets/battery50.png")
+        elif charge < 70:
+            icon = Image.open("assets/battery70.png")
+        else:
+            icon = Image.open("assets/battery100.png")
+        return icon
 
     def get_battery_status(self):
         status = (
@@ -56,6 +76,7 @@ class Cupra:
             .get("batteryStatus")
         )
         if status is not None:
-            return status
+            soc_icon = self.__battery_icon(status.currentSOC_pct.value)
+            return status, soc_icon
         else:
             raise

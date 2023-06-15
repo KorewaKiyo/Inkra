@@ -13,8 +13,9 @@ from PIL import Image, ImageFont, ImageDraw
 from interface.terminal import Terminal
 
 # Setup logging and formatting
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(module)s - %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(module)s - %(message)s")
 logger = logging.getLogger("Inkra")
+
 
 # Allows clean break without tkinter messages while debugging
 # noinspection PyUnusedLocal
@@ -80,7 +81,7 @@ class Inkra:
         with open("assets/banana.otf", "rb") as font:
             self.font = ImageFont.truetype(font, 14)
 
-        # Consisent margins
+        # Consistent margins
         self.margin = 10
         self.line_offset = 53
 
@@ -111,22 +112,6 @@ class Inkra:
             except RuntimeError:
                 Terminal.error("Weather interface failed to init, disabling.")
 
-    def __battery_icon(self, charge: int):
-        # TODO: I'm not sure I like this.
-        if charge < 0:
-            raise AttributeError("Battery can not be less than 0%!")
-        elif charge <= 15:
-            icon = Image.open("assets/battery15.png")
-        elif charge < 30:
-            icon = Image.open("assets/battery30.png")
-        elif charge < 50:
-            icon = Image.open("assets/battery50.png")
-        elif charge < 70:
-            icon = Image.open("assets/battery70.png")
-        else:
-            icon = Image.open("assets/battery100.png")
-        self.icon = icon
-
     def __draw_time(self):
         # TODO: Time function is a bit messy
         time_now = datetime.datetime.now().strftime("%H:%M")
@@ -141,7 +126,7 @@ class Inkra:
         # 26.5 - 17.5 = 9px putting them in the centre
         self.draw.text((9, 0), time_now, self.display.RED, self.font)
 
-    def generate_image(self, charge=0):
+    def generate_image(self):
         # Reset canvas otherwise it flips each time
         self.image = None
         self.image = Image.new(
@@ -151,21 +136,32 @@ class Inkra:
 
         battery_status = self.cupra.get_battery_status()
         if battery_status is not None:
-            charge = battery_status.currentSOC_pct.value
-            charge_range = battery_status.cruisingRangeElectric_km.value
+            charge = battery_status[0].currentSOC_pct.value
+            charge_range = battery_status[0].cruisingRangeElectric_km.value
             unit = "km"
-            message = f"SoC is {charge}%"
-            # f"Range is {charge_range}{unit}"
+            soc_message = f"Charge: {charge}%"
+            range_message = f"Range : {charge_range}{unit}"
+            soc_message_bbox = self.font.getbbox(soc_message)
+
+            soc_message_coords = (
+                (self.display.width / 2) - (soc_message_bbox[2] / 2),
+                (self.display.height / 2) - (soc_message_bbox[3] / 2),
+            )
+            range_message_coords = (
+                soc_message_coords[0],
+                soc_message_coords[1] + self.margin
+            )
+            self.draw.text(soc_message_coords, soc_message, self.display.RED, self.font)
+            self.draw.text(range_message_coords, range_message, self.display.RED, self.font)
         else:
             message = "Failed to get SoC"
+            message_bbox = self.font.getbbox(message)
 
-        message_bbox = self.font.getbbox(message)
-
-        message_coords = (
-            (self.display.width / 2) - (message_bbox[2] / 2),
-            (self.display.height / 2) - (message_bbox[3] / 2),
-        )
-        self.draw.text(message_coords, message, self.display.RED, self.font)
+            message_coords = (
+                (self.display.width / 2) - (message_bbox[2] / 2),
+                (self.display.height / 2) - (message_bbox[3] / 2),
+            )
+            self.draw.text(message_coords, message, self.display.RED, self.font)
 
         if self.options["ShowTime"]:
             self.__draw_time()
@@ -176,12 +172,13 @@ class Inkra:
             self.image.paste(logo, logo_pos)
 
         if self.options["ShowBatteryIcon"]:
-            self.__battery_icon(charge)
-            bat_pos = (
-                math.ceil((self.display.width / 2) - (self.icon.width / 2)),
-                (self.display.height - self.icon.height),
-            )
-            self.image.paste(self.icon, bat_pos)
+            if battery_status is not None:
+                icon = battery_status[1]
+                bat_pos = (
+                    math.ceil((self.display.width / 2) - (icon.width / 2)),
+                    (self.display.height - icon.height),
+                )
+                self.image.paste(icon, bat_pos)
         if self.options["DrawLines"]:
             self.draw.line(
                 (self.line_offset, 0, self.line_offset, self.display.height),
