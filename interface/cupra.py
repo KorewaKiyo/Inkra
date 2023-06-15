@@ -5,15 +5,20 @@ from weconnect_cupra.service import Service
 # Terminal interface
 from interface.terminal import Terminal
 
+import logging
+
+logger = logging.getLogger("Inkra")
+
 
 class Cupra:
     """Interface for the MyCupra app backend"""
 
     def __init__(self):
-        # We can expect config.yaml to exist if we got to here from inkra.py
+        # It's expected config.yml exists if execution reaches this far
         with open("config.yml", "r") as config_file:
             config = yaml.safe_load(config_file)
 
+        # It's not expected that config.yml is formatted correctly though
         self.config = config.get("Cupra", None)
         if self.config is None:
             raise Terminal.ConfigError("Could not find Cupra section in config.yml")
@@ -26,7 +31,7 @@ class Cupra:
             username=self.username,
             password=self.password,
             maxAge=300,
-            tokenfile="token.txt",
+            tokenfile="token.json",
             updateAfterLogin=True,
             loginOnInit=True,
             service=Service("MyCupra"),
@@ -38,6 +43,7 @@ class Cupra:
         # We can grab the first vehicle's VIN from the account and use that
         if self.vin is None:
             self.vin = str(self.cupra_api.vehicles.children[0].vin)
+            logger.info(f"Your VIN is {self.vin}, you should add this to the Cupra section of config.yml")
 
         # Same as weather interface, we'll only cache the status request
         # For SoC, Climate, etc. "

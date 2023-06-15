@@ -1,3 +1,8 @@
+import logging
+
+logger = logging.getLogger("Inkra")
+
+
 class Terminal:
     """Interface for pretty terminal colours"""
 
@@ -15,22 +20,22 @@ class Terminal:
 
     @classmethod
     def warn(cls, message):
-        print(f"\n{cls.warning}Warning: {message}{cls.end_colours}")
+        logger.warning(f"\n{cls.warning}Warning: {message}{cls.end_colours}")
 
     @classmethod
     def error(cls, message):
-        print(f"\n{cls.fail}Non-fatal error: {message}{cls.end_colours}")
+        logger.error(f"\n{cls.fail}Non-fatal error: {message}{cls.end_colours}")
 
     @classmethod
     def debug(cls, message):
-        print(f"\n{cls.blue}DEBUG: {message}{cls.end_colours}")
+        logger.debug(f"\n{cls.blue}DEBUG: {message}{cls.end_colours}")
 
     @classmethod
     def print(cls, message):
-        print(f"{cls.end_colours}{message}")
+        logger.info(f"{cls.end_colours}{message}")
 
     @classmethod
     def fatal(cls, message):
         # It's easier on the eyes than an exception trace
-        print(f"\n{cls.fail}Fatal error: {message}{cls.end_colours}")
+        logger.error(f"\n{cls.fail}Fatal error: {message}{cls.end_colours}")
         exit(255)

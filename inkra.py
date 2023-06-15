@@ -14,7 +14,7 @@ from interface.terminal import Terminal
 
 # Setup logging and formatting
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(module)s - %(message)s")
-
+logger = logging.getLogger("Inkra")
 
 # Allows clean break without tkinter messages while debugging
 # noinspection PyUnusedLocal
