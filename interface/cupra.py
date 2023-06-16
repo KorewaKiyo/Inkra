@@ -80,11 +80,12 @@ class Cupra:
             soc_icon = self.__battery_icon(status.currentSOC_pct.value)
             return status, soc_icon
         else:
-            raise
+            return None
 
     def get_climate_Status(self):
         climate_status = (
             self.cupra_api.vehicles.get(self.vin)
             .domains
+            .get("climatisation")
         )
-        print(climate_status)
+        return climate_status
