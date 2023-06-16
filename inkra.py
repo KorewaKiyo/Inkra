@@ -182,7 +182,7 @@ class Inkra:
                     .remainingClimatisationTime_min
                     .value  # int: 0
                 )
-                
+
 
         if self.options["ShowTime"]:
             self.__draw_time()

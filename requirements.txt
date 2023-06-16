@@ -3,5 +3,5 @@ Pillow
 inky
 numpy
 geocoder~=1.38.1
-requests~=2.28.2
+requests
 PyYAML

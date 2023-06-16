@@ -82,6 +82,9 @@ class Cupra:
         else:
             return None
 
+    def get_charging_status(self):
+        pass
+
     def get_climate_Status(self):
         climate_status = (
             self.cupra_api.vehicles.get(self.vin)
@@ -89,3 +92,9 @@ class Cupra:
             .get("climatisation")
         )
         return climate_status
+
+
+
+    def enable_climate(self, target_temp):
+        pass
+
