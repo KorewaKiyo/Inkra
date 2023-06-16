@@ -34,6 +34,7 @@ class Cupra:
             password=self.password,
             maxAge=300,
             tokenfile="token.json",
+            updateAfterLogin=False,
             service=Service("MyCupra"),
         )
         if self.cupra_api.session.token is None:
@@ -80,3 +81,10 @@ class Cupra:
             return status, soc_icon
         else:
             raise
+
+    def get_climate_Status(self):
+        climate_status = (
+            self.cupra_api.vehicles.get(self.vin)
+            .domains
+        )
+        print(climate_status)
