@@ -163,6 +163,27 @@ class Inkra:
             )
             self.draw.text(message_coords, message, self.display.RED, self.font)
 
+        climate_status = self.cupra.get_climate_Status()
+        if climate_status is not None:
+
+            climatisation_state = (
+                climate_status.get("climatisationStatus")
+                .climatisationState
+                .value  # <ClimatizationState.OFF: 'off'>
+                .value  # str: "off"
+            )
+            if climatisation_state != 'off':
+                target_temp = (climate_status.get("climatisationSettings")
+                               .targetTemperature_C
+                               .value  # float: 15.5
+                               )
+                remaining_time = (
+                    climate_status.get("climatisationStatus")
+                    .remainingClimatisationTime_min
+                    .value  # int: 0
+                )
+                
+
         if self.options["ShowTime"]:
             self.__draw_time()
 
