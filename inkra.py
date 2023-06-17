@@ -119,21 +119,17 @@ class Inkra:
 
         time_size = self.font.getbbox(time_now)
         # date_size = self.font.getbbox(date)
-        self.draw.text((9, (time_size[3] + 5)), date, self.display.RED, self.font)
+        self.draw.text(
+            (9, (time_size[3] + 5) # x, y
+             ), date, self.display.RED, self.font)
         # 9 is chosen as the x because
         # line-offset/2 = 26.5px
-        # length of date or time = 17.5px
+        # length of date or time / 2 = 17.5px
         # 26.5 - 17.5 = 9px putting them in the centre
+
         self.draw.text((9, 0), time_now, self.display.RED, self.font)
 
-    def generate_image(self):
-        # Reset canvas otherwise it flips each time
-        self.image = None
-        self.image = Image.new(
-            "P", (self.display.width, self.display.height), self.display.WHITE
-        )
-        self.draw = ImageDraw.Draw(self.image)
-
+    def __draw_battery(self):
         battery_status = self.cupra.get_battery_status()
         if battery_status is not None:
             charge = battery_status[0].currentSOC_pct.value
@@ -163,6 +159,26 @@ class Inkra:
             )
             self.draw.text(message_coords, message, self.display.RED, self.font)
 
+        if self.options["ShowBatteryIcon"] and battery_status is not None:
+            icon = battery_status[1]
+            bat_pos = (
+                math.ceil((self.display.width / 2) - (icon.width / 2)),
+                (self.display.height - icon.height),
+            )
+            self.image.paste(icon, bat_pos)
+
+    def generate_image(self):
+        # Reset canvas otherwise it flips each time
+        self.image = None
+        self.image = Image.new(
+            "P", (self.display.width, self.display.height), self.display.WHITE
+        )
+        self.draw = ImageDraw.Draw(self.image)
+
+        self.__draw_battery()
+        if self.options["ShowTime"]:
+            self.__draw_time()
+
         climate_status = self.cupra.get_climate_Status()
         if climate_status is not None:
 
@@ -172,34 +188,33 @@ class Inkra:
                 .value  # <ClimatizationState.OFF: 'off'>
                 .value  # str: "off"
             )
-            if climatisation_state != 'off':
+            if True:
+                # TODO: revert this after testing
+                # climatisation_state != 'off'
                 target_temp = (climate_status.get("climatisationSettings")
                                .targetTemperature_C
                                .value  # float: 15.5
                                )
+                temperature_text = f"{target_temp}°C"
+
                 remaining_time = (
                     climate_status.get("climatisationStatus")
                     .remainingClimatisationTime_min
                     .value  # int: 0
                 )
-
-
-        if self.options["ShowTime"]:
-            self.__draw_time()
+                time_text = f"{remaining_time}"
+                time_pos = (16, (self.display.height - 33))
+                # 16 is chosen for the position of the remaining time for the same reason as the clock
+                # line-offset/2 = 26.5
+                # time_text length /2 = 10.5
+                # 26.5-10.5 = 16 :)
+                self.draw.text(time_pos, time_text, self.display.RED, self.font)
 
         if self.options["ShowLogo"]:
             logo = Image.open("assets/Cupra-Logo.png")
             logo_pos = (math.ceil((self.display.width / 2) - (logo.width / 2)), 0)
             self.image.paste(logo, logo_pos)
 
-        if self.options["ShowBatteryIcon"]:
-            if battery_status is not None:
-                icon = battery_status[1]
-                bat_pos = (
-                    math.ceil((self.display.width / 2) - (icon.width / 2)),
-                    (self.display.height - icon.height),
-                )
-                self.image.paste(icon, bat_pos)
         if self.options["DrawLines"]:
             self.draw.line(
                 (self.line_offset, 0, self.line_offset, self.display.height),
@@ -216,6 +231,7 @@ class Inkra:
                 fill=self.display.BLACK,
                 width=3,
             )
+
         if self.options["ShowWeather"]:
             weather = self.weather.get_weather()
             if weather is None:
