@@ -39,7 +39,7 @@ class Cupra:
         )
         if self.cupra_api.session.token is None:
             self.cupra_api.login()
-            self.cupra_api.persistTokens()
+        self.cupra_api.persistTokens()
         self.cupra_api.update()
 
         # If the VIN hasn't been defined, but login succeeded,
@@ -93,8 +93,5 @@ class Cupra:
         )
         return climate_status
 
-
-
     def enable_climate(self, target_temp):
         pass
-
