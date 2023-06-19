@@ -8,12 +8,13 @@ import signal
 import font_fredoka_one
 
 from PIL import Image, ImageFont, ImageDraw
+from math import floor
 
 # Terminal interface
 from interface.terminal import Terminal
 
 # Setup logging and formatting
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(module)s - %(message)s")
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(module)s - %(message)s")
 logger = logging.getLogger("Inkra")
 
 
@@ -120,7 +121,7 @@ class Inkra:
         time_size = self.font.getbbox(time_now)
         # date_size = self.font.getbbox(date)
         self.draw.text(
-            (9, (time_size[3] + 5) # x, y
+            (9, (time_size[3] + 5)  # x, y
              ), date, self.display.RED, self.font)
         # 9 is chosen as the x because
         # line-offset/2 = 26.5px
@@ -188,27 +189,30 @@ class Inkra:
                 .value  # <ClimatizationState.OFF: 'off'>
                 .value  # str: "off"
             )
-            if True:
+            if True:  # climatisation_state != 'off'
                 # TODO: revert this after testing
-                # climatisation_state != 'off'
-                target_temp = (climate_status.get("climatisationSettings")
-                               .targetTemperature_C
-                               .value  # float: 15.5
-                               )
-                temperature_text = f"{target_temp}°C"
 
                 remaining_time = (
                     climate_status.get("climatisationStatus")
                     .remainingClimatisationTime_min
                     .value  # int: 0
                 )
-                time_text = f"{remaining_time}"
+                time_text = f"{remaining_time}m"
                 time_pos = (16, (self.display.height - 33))
                 # 16 is chosen for the position of the remaining time for the same reason as the clock
                 # line-offset/2 = 26.5
                 # time_text length /2 = 10.5
                 # 26.5-10.5 = 16 :)
+
                 self.draw.text(time_pos, time_text, self.display.RED, self.font)
+
+                target_temp = floor(climate_status.get("climatisationSettings")
+                                    .targetTemperature_C
+                                    .value  # float: 15.5
+                                    )
+                temperature_text = f"{target_temp}C"
+                temp_pos = (16, (time_pos[1] - self.margin))
+                self.draw.text(temp_pos, temperature_text, self.display.RED, self.font)
 
         if self.options["ShowLogo"]:
             logo = Image.open("assets/Cupra-Logo.png")
